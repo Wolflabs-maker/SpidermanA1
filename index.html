@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOLFSTATION | Spider-Man: Symbiote Arc (A1)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --spider-red: #E23636;
+            --spider-blue: #4361EE;
+            --symbiote-black: #050505;
+            --hud-green: #00FF41;
+            --venom-purple: #B300FF;
+            --ps-triangle: #4ade80; 
+            --ps-circle: #ef4444;   
+            --ps-cross: #3b82f6;    
+            --ps-square: #ec4899;   
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--symbiote-black);
+            color: #ffffff;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            cursor: crosshair;
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .clip-path-slant { clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+
+        /* Scanlines & CRT Effect */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, rgba(0,0,0,0) 30%, rgba(0,0,0,0.95) 100%);
+            z-index: 99;
+            pointer-events: none;
+        }
+
+        /* Animations */
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-hover:hover { animation: glitch 0.2s linear infinite; color: var(--venom-purple); text-shadow: 2px 0 red, -2px 0 blue; }
+        .glitch-active { animation: glitch 0.3s linear; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        /* HUD Elements */
+        .hud-panel {
+            background: rgba(10, 10, 15, 0.85);
+            border: 2px solid rgba(67, 97, 238, 0.3);
+            box-shadow: inset 0 0 20px rgba(67, 97, 238, 0.1);
+            backdrop-filter: blur(8px);
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+        }
+
+        .btn-game {
+            background: linear-gradient(45deg, var(--spider-blue), #1e3a8a);
+            border: 2px solid #60a5fa;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+        }
+        .btn-game:hover {
+            background: linear-gradient(45deg, var(--spider-red), #990000);
+            border-color: #ff6b6b;
+            transform: scale(1.02);
+            box-shadow: 0 0 15px var(--spider-red);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #7f1d1d, #450a0a);
+            border: 2px solid #ef4444;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(45deg, #b91c1c, #7f1d1d);
+            box-shadow: 0 0 20px #ef4444;
+        }
+
+        /* PlayStation Buttons */
+        .btn-ps {
+            background: rgba(20, 20, 30, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px 30px;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 140px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .btn-ps:hover {
+            transform: translateY(-5px) scale(1.05);
+            background: rgba(40, 40, 60, 0.9);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .ps-icon-0 { color: var(--ps-triangle); text-shadow: 0 0 10px var(--ps-triangle); }
+        .ps-icon-1 { color: var(--ps-circle); text-shadow: 0 0 10px var(--ps-circle); }
+        .ps-icon-2 { color: var(--ps-cross); text-shadow: 0 0 10px var(--ps-cross); }
+        .ps-icon-3 { color: var(--ps-square); text-shadow: 0 0 10px var(--ps-square); }
+
+        .hp-container {
+            width: 300px;
+            height: 20px;
+            background: #222;
+            border: 2px solid #444;
+            transform: skewX(-15deg);
+            overflow: hidden;
+            position: relative;
+        }
+        .hp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff5555);
+            width: 100%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px red;
+        }
+
+        .dialogue-box {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--spider-blue);
+            border-top: 4px solid var(--spider-red);
+        }
+        
+        .syntax-word {
+            background: rgba(67, 97, 238, 0.4);
+            border: 1px solid var(--spider-blue);
+            padding: 15px 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        .syntax-word:hover { 
+            background: var(--spider-blue); 
+            box-shadow: 0 0 20px var(--spider-blue); 
+            transform: scale(1.15) !important; 
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body class="text-white h-screen w-screen flex flex-col">
+
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <!-- TOP HUD -->
+    <div id="hud-top" class="absolute top-0 w-full p-6 flex justify-between items-start z-50 hidden">
+        <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-3">
+                <span class="orbitron font-bold text-red-500 text-xl text-shadow-sm">HP</span>
+                <div class="hp-container">
+                    <div id="hp-fill" class="hp-bar"></div>
+                </div>
+                <!-- ABORT BUTTON -->
+                <button id="btn-abort" onclick="abortMission()" class="hidden orbitron text-xs text-red-400 hover:text-white border border-red-500/50 bg-red-900/30 px-4 py-1.5 ml-4 clip-path-slant transition-colors backdrop-blur-sm shadow-[0_0_10px_rgba(220,38,38,0.3)] hover:shadow-[0_0_15px_rgba(220,38,38,0.8)]">
+                    <i class="fa-solid fa-triangle-exclamation mr-1 animate-pulse"></i> ABORT MISSION
+                </button>
+            </div>
+            <div class="orbitron text-xs text-blue-400 opacity-80 ml-12">SUIT INTEGRITY: <span id="hp-text">100%</span></div>
+        </div>
+        
+        <div class="text-right hud-panel px-6 py-3 border-r-4 border-r-blue-500">
+            <p class="orbitron text-[10px] text-gray-400 mb-1">XP EARNED</p>
+            <p id="xp-display" class="orbitron font-black text-3xl text-blue-400 drop-shadow-[0_0_8px_rgba(67,97,238,0.8)]">0</p>
+        </div>
+    </div>
+
+    <!-- TITLE SCREEN (START MENU) -->
+    <!-- Upgraded Cover: Cityscape with flawless fading edges to avoid "cut off" feeling -->
+    <div id="screen-title" class="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black">
+        <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=2000')] bg-cover bg-center bg-no-repeat opacity-50"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-blue-950/40 to-black/80"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black"></div>
+        
+        <div class="relative z-10 flex flex-col items-center mt-10">
+            <div class="relative mb-6">
+                <i class="fa-solid fa-spider text-8xl text-red-600 drop-shadow-[0_0_25px_rgba(226,54,54,0.9)]"></i>
+            </div>
+            <h2 class="orbitron text-blue-400 tracking-[0.5em] text-sm font-bold mb-4 drop-shadow-[0_0_5px_blue]">WOLFSTATION // LABS</h2>
+            <h1 class="orbitron text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-red-400 to-red-800 drop-shadow-[0_0_20px_rgba(226,54,54,0.6)] mb-2 uppercase glitch-hover">Spider-Arc</h1>
+            <p class="text-2xl font-bold text-gray-300 mb-16 tracking-widest uppercase border-b-2 border-blue-600 pb-2 drop-shadow-md">A1 Grammar Mission</p>
+            
+            <button onclick="startGame()" class="orbitron text-3xl font-bold text-white hover:text-blue-400 transition-all bg-black/60 px-12 py-5 border border-blue-500/50 clip-path-slant backdrop-blur-md hover:scale-105 shadow-[0_0_20px_rgba(67,97,238,0.4)] hover:shadow-[0_0_30px_rgba(67,97,238,0.8)]">
+                [ PRESS START ]
+            </button>
+        </div>
+    </div>
+
+    <!-- MISSION MAP (LEVEL SELECT) -->
+    <div id="screen-map" class="absolute inset-0 z-30 hidden bg-black/95 p-10 pt-24 flex flex-col">
+        <div class="max-w-6xl mx-auto w-full">
+            <h2 class="orbitron text-3xl text-blue-400 border-l-4 border-blue-500 pl-4 mb-10 uppercase shadow-blue-500/50 drop-shadow-lg">Select Mission</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <!-- Mission 1 -->
+                <div onclick="startMission(0)" class="hud-panel p-6 cursor-pointer group hover:border-red-500 transition-all">
+                    <div class="text-red-500 orbitron text-xs mb-4 flex justify-between"><span>M01</span> <i class="fa-solid fa-unlock"></i></div>
+                    <i class="fa-solid fa-satellite-dish text-4xl text-gray-400 group-hover:text-white mb-4 transition-colors"></i>
+                    <h3 class="font-bold text-lg mb-1 uppercase">Area Scan</h3>
+                    <p class="text-xs text-gray-500">Identify basic "To Be" verbs.</p>
+                </div>
+                <!-- Mission 2 -->
+                <div onclick="startMission(1)" class="hud-panel p-6 cursor-pointer group hover:border-red-500 transition-all">
+                    <div class="text-blue-500 orbitron text-xs mb-4 flex justify-between"><span>M02</span> <i class="fa-solid fa-unlock"></i></div>
+                    <i class="fa-solid fa-link text-4xl text-gray-400 group-hover:text-white mb-4 transition-colors"></i>
+                    <h3 class="font-bold text-lg mb-1 uppercase">Web Combo</h3>
+                    <p class="text-xs text-gray-500">Connect words to build sentences.</p>
+                </div>
+                <!-- Mission 3 -->
+                <div onclick="startMission(2)" class="hud-panel p-6 cursor-pointer group hover:border-purple-500 transition-all">
+                    <div class="text-purple-500 orbitron text-xs mb-4 flex justify-between"><span>M03</span> <i class="fa-solid fa-unlock"></i></div>
+                    <i class="fa-solid fa-bug text-4xl text-gray-400 group-hover:text-white mb-4 transition-colors"></i>
+                    <h3 class="font-bold text-lg mb-1 uppercase">Fix Glitch</h3>
+                    <p class="text-xs text-gray-500">Fix the easy grammar error.</p>
+                </div>
+                <!-- Mission 4 -->
+                <div onclick="startMission(3)" class="hud-panel p-6 cursor-pointer group hover:border-red-500 transition-all">
+                    <div class="text-red-500 orbitron text-xs mb-4 flex justify-between"><span>M04</span> <i class="fa-solid fa-unlock"></i></div>
+                    <i class="fa-solid fa-walkie-talkie text-4xl text-gray-400 group-hover:text-white mb-4 transition-colors"></i>
+                    <h3 class="font-bold text-lg mb-1 uppercase">Comms Link</h3>
+                    <p class="text-xs text-gray-500">Free conversation over the radio.</p>
+                </div>
+                <!-- Mission 5 -->
+                <div onclick="startMission(4)" class="hud-panel p-6 cursor-pointer group hover:border-red-500 transition-all relative overflow-hidden">
+                    <div class="absolute inset-0 bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="text-red-500 orbitron text-xs mb-4 flex justify-between"><span>M05</span> <i class="fa-solid fa-skull"></i></div>
+                    <i class="fa-solid fa-biohazard text-4xl text-red-500 group-hover:scale-110 mb-4 transition-transform drop-shadow-[0_0_8px_red]"></i>
+                    <h3 class="font-bold text-lg mb-1 uppercase">Boss Fight</h3>
+                    <p class="text-xs text-gray-500">Speak freely to attack Venom!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN GAMEPLAY SCREEN -->
+    <div id="screen-game" class="absolute inset-0 z-20 hidden flex flex-col items-center justify-center pt-20 pb-40 px-10">
+        
+        <!-- Interactive Arena -->
+        <div id="game-arena" class="w-full max-w-5xl h-full flex flex-col items-center justify-center relative">
+            <!-- Dynamic content injected here -->
+        </div>
+
+        <!-- DIALOGUE BOX -->
+        <div class="absolute bottom-8 w-full max-w-4xl px-4 z-50">
+            <div class="dialogue-box p-6 relative">
+                <div id="speaker-name" class="absolute -top-6 left-4 bg-blue-600 px-4 py-1 orbitron text-sm font-bold uppercase clip-path-slant">
+                    SYSTEM AI
+                </div>
+                <div class="flex items-start gap-4">
+                    <div id="speaker-icon" class="w-16 h-16 bg-gray-900 border border-gray-600 flex items-center justify-center text-2xl flex-shrink-0">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <p id="dialogue-text" class="text-lg font-bold leading-relaxed text-blue-100 min-h-[56px]"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEEDBACK OVERLAY (HIT / MISS) -->
+    <div id="screen-feedback" class="absolute inset-0 z-[60] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="text-center w-full">
+            <h1 id="feedback-result" class="orbitron text-6xl md:text-8xl font-black mb-4 tracking-widest uppercase">HIT!</h1>
+            <p id="feedback-tip" class="text-2xl mb-12 font-bold max-w-2xl mx-auto px-4"></p>
+            <button onclick="nextStep()" class="btn-game px-12 py-4 text-xl">Continue Mission</button>
+        </div>
+    </div>
+
+    <!-- MISSION CLEARED SCREEN -->
+    <div id="screen-cleared" class="absolute inset-0 z-[70] hidden flex flex-col items-center justify-center bg-black/95">
+        <h2 class="orbitron text-blue-500 tracking-[0.5em] text-xl font-bold mb-4">WOLFSTATION // SYSTEM</h2>
+        <h1 class="orbitron text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-blue-400 to-blue-800 mb-12 uppercase">Mission Cleared</h1>
+        
+        <div class="hud-panel p-8 w-full max-w-md text-center mb-8">
+            <p class="text-gray-400 text-sm orbitron mb-2">XP EARNED</p>
+            <p class="text-5xl font-black text-green-400 mb-6">+<span id="cleared-xp">0</span></p>
+            
+            <p class="text-gray-400 text-sm orbitron mb-2">RANKING (SUIT INTEGRITY)</p>
+            <p id="cleared-rank" class="text-4xl font-black text-white orbitron">S</p>
+        </div>
+
+        <button onclick="returnToMap()" class="btn-game px-12 py-4 text-xl bg-blue-600 border-blue-400 hover:bg-blue-500">Return to Map</button>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div id="screen-gameover" class="absolute inset-0 z-[80] hidden flex flex-col items-center justify-center bg-red-950/90">
+        <h1 class="orbitron text-8xl font-black text-red-600 mb-4 uppercase drop-shadow-[0_0_20px_red]">Game Over</h1>
+        <p class="text-2xl text-red-200 mb-12 orbitron">SUIT INTEGRITY CRITICAL</p>
+        <button onclick="location.reload()" class="btn-game px-12 py-4 text-xl btn-danger">Reboot System</button>
+    </div>
+
+    <script>
+        // --- DATABASE A1 (Present Continuous / Verb To Be) ---
+        const psIcons = [
+            '<i class="fa-solid fa-caret-up text-5xl mb-2 ps-icon-0"></i>',   // Triangle
+            '<i class="fa-regular fa-circle text-4xl mb-2 ps-icon-1"></i>', // Circle
+            '<i class="fa-solid fa-xmark text-5xl mb-2 ps-icon-2"></i>',    // Cross
+            '<i class="fa-regular fa-square text-4xl mb-2 ps-icon-3"></i>'  // Square
+        ];
+
+        const gameData = [
+            // M01: SCANNING (PS Buttons)
+            {
+                type: 'scan',
+                speaker: 'MILES',
+                icon: 'fa-mask',
+                color: 'blue',
+                questions: [
+                    { q: "I ___ Spider-Man.", options: ['are', 'is', 'am', 'be'], correct: 2, tip: "Always use 'am' with 'I'." },
+                    { q: "Peter ___ jumping.", options: ['am', 'are', 'be', 'is'], correct: 3, tip: "Use 'is' for 'Peter' (He)." },
+                    { q: "They ___ bad guys.", options: ['are', 'am', 'is', 'be'], correct: 0, tip: "Use 'are' for plural (They)." },
+                    { q: "We ___ fighting Venom.", options: ['is', 'am', 'be', 'are'], correct: 3, tip: "Use 'are' with 'We'." },
+                    { q: "The suit ___ black.", options: ['are', 'is', 'am', 'be'], correct: 1, tip: "The suit is a thing (It), so use 'is'." }
+                ]
+            },
+            // M02: COMBO WEB
+            {
+                type: 'combo',
+                speaker: 'SYSTEM',
+                icon: 'fa-server',
+                color: 'gray',
+                questions: [
+                    { target: "I am Peter.", words: ["Peter.", "am", "I"], tip: "I + am + Name." },
+                    { target: "He is jumping.", words: ["jumping.", "is", "He"], tip: "He + is + Action(ing)." },
+                    { target: "They are running.", words: ["running.", "They", "are"], tip: "They + are + Action(ing)." },
+                    { target: "We are safe.", words: ["are", "We", "safe."], tip: "We + are + Adjective." },
+                    { target: "Is he Venom?", words: ["Venom?", "he", "Is"], tip: "Question: To Be + Subject + Name." }
+                ]
+            },
+            // M03: FIX GLITCH
+            {
+                type: 'glitch',
+                speaker: 'SYMBIOTE',
+                icon: 'fa-spider',
+                color: 'purple',
+                questions: [
+                    { sentence: ["I", "is", "Spider-Man."], bugIndex: 1, explanation: "Error! Use 'am' with 'I'." },
+                    { sentence: ["Peter", "are", "my", "friend."], bugIndex: 1, explanation: "Error! Use 'is' with 'Peter' (He)." },
+                    { sentence: ["We", "am", "heroes."], bugIndex: 1, explanation: "Error! Use 'are' with 'We'." },
+                    { sentence: ["The", "suit", "are", "black."], bugIndex: 2, explanation: "Error! The suit is 'It', use 'is'." },
+                    { sentence: ["They", "is", "fighting."], bugIndex: 1, explanation: "Error! Use 'are' with 'They'." }
+                ]
+            },
+            // M04: COMMS LINK (Conversational)
+            {
+                type: 'comms',
+                speaker: 'GANKE',
+                icon: 'fa-laptop-code',
+                color: 'green',
+                questions: [
+                    { context: "Hey man! Where are you right now?", starters: ["I am...", "We are..."] },
+                    { context: "Who is that guy in the black suit?!", starters: ["He is...", "That is..."] },
+                    { context: "Are the citizens safe from the hunters?", starters: ["Yes, they are...", "No, they are..."] },
+                    { context: "Is Venom destroying the city?", starters: ["Yes, he is...", "It is..."] },
+                    { context: "What are we doing next to win this?", starters: ["We are...", "I am..."] }
+                ]
+            },
+            // M05: BOSS FIGHT (Conversational)
+            {
+                type: 'boss',
+                speaker: 'VENOM',
+                icon: 'fa-skull',
+                color: 'red',
+                questions: [
+                    { prompt: "You are weak! You are nothing without the suit!", starters: ["I am...", "You are..."] },
+                    { prompt: "Who is going to save this city now?!", starters: ["I am...", "We are..."] },
+                    { prompt: "Look at you! Are you scared of us?", starters: ["I am not...", "We are..."] },
+                    { prompt: "This city is ours!", starters: ["It is not...", "You are..."] },
+                    { prompt: "You can't win! We are Venom!", starters: ["I am...", "We are..."] }
+                ]
+            }
+        ];
+
+        // --- GAME STATE ---
+        let currentMission = 0;
+        let currentStep = 0;
+        let hp = 100;
+        let xp = 0;
+        let comboWords = [];
+        let isTyping = false;
+        let typeInterval;
+        let venomHp = 100;
+
+        // --- UTILITIES ---
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function getRandomTransform() {
+            const rot = Math.floor(Math.random() * 40) - 20;
+            const x = Math.floor(Math.random() * 60) - 30;
+            const y = Math.floor(Math.random() * 60) - 30;
+            return `transform: rotate(${rot}deg) translate(${x}px, ${y}px);`;
+        }
+
+        // --- SOUND / VISUAL EFFECTS ---
+        function shakeScreen() {
+            const body = document.body;
+            body.classList.remove('shake');
+            void body.offsetWidth; 
+            body.classList.add('shake');
+        }
+
+        function updateHUD() {
+            document.getElementById('hp-fill').style.width = hp + '%';
+            document.getElementById('hp-text').innerText = hp + '%';
+            document.getElementById('xp-display').innerText = xp;
+
+            const hpBar = document.getElementById('hp-fill');
+            if (hp <= 30) {
+                hpBar.style.background = 'red';
+                document.getElementById('hud-top').classList.add('glitch-hover');
+            } else {
+                hpBar.style.background = 'linear-gradient(90deg, #ff0000, #ff5555)';
+                document.getElementById('hud-top').classList.remove('glitch-hover');
+            }
+
+            if (hp <= 0) {
+                document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('screen-feedback').classList.add('hidden');
+                document.getElementById('screen-gameover').classList.remove('hidden');
+            }
+        }
+
+        function typeDialogue(text, speakerName, colorClass, iconClass) {
+            const dialogueEl = document.getElementById('dialogue-text');
+            const nameEl = document.getElementById('speaker-name');
+            const iconEl = document.getElementById('speaker-icon');
+            
+            nameEl.innerText = speakerName;
+            iconEl.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+            
+            let bgCol = "bg-blue-600"; let borderCol = "border-spider-blue";
+            if(colorClass === 'red') { bgCol = "bg-red-600"; borderCol = "border-spider-red"; }
+            else if(colorClass === 'purple') { bgCol = "bg-purple-600"; borderCol = "border-venom-purple"; }
+            else if(colorClass === 'green') { bgCol = "bg-green-600"; borderCol = "border-hud-green"; }
+            else if(colorClass === 'gray') { bgCol = "bg-gray-700"; borderCol = "border-gray-500"; }
+            
+            nameEl.className = `absolute -top-6 left-4 ${bgCol} px-4 py-1 orbitron text-sm font-bold uppercase clip-path-slant`;
+            document.querySelector('.dialogue-box').className = `dialogue-box p-6 relative border-2 ${borderCol} border-top-4`;
+
+            dialogueEl.innerHTML = '';
+            let i = 0;
+            isTyping = true;
+            clearInterval(typeInterval);
+            
+            typeInterval = setInterval(() => {
+                if (i < text.length) {
+                    dialogueEl.innerHTML += text.charAt(i);
+                    i++;
+                } else {
+                    isTyping = false;
+                    clearInterval(typeInterval);
+                }
+            }, 30);
+        }
+
+        // --- NAVIGATION ---
+        function startGame() {
+            document.getElementById('screen-title').classList.add('hidden');
+            document.getElementById('hud-top').classList.remove('hidden');
+            document.getElementById('screen-map').classList.remove('hidden');
+            document.getElementById('btn-abort').classList.add('hidden');
+        }
+
+        function startMission(index) {
+            currentMission = index;
+            currentStep = 0;
+            if (index === 4) venomHp = 100;
+            document.getElementById('screen-map').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('btn-abort').classList.remove('hidden');
+            renderGamePlay();
+        }
+
+        function abortMission() {
+            clearInterval(typeInterval);
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-feedback').classList.add('hidden');
+            document.getElementById('screen-map').classList.remove('hidden');
+            document.getElementById('btn-abort').classList.add('hidden');
+            hp = 100;
+            updateHUD();
+        }
+
+        function returnToMap() {
+            document.getElementById('screen-cleared').classList.add('hidden');
+            document.getElementById('screen-map').classList.remove('hidden');
+            document.getElementById('btn-abort').classList.add('hidden');
+            hp = Math.min(100, hp + 20);
+            updateHUD();
+        }
+
+        // --- GAMEPLAY RENDERING ---
+        function renderGamePlay() {
+            const m = gameData[currentMission];
+            const q = m.questions[currentStep];
+            const arena = document.getElementById('game-arena');
+            let ui = '';
+            let instruct = '';
+
+            if (m.type === 'scan') {
+                instruct = `ANALYSIS REQUIRED: Complete the sentence correctly.\n"${q.q}"`;
+                ui = `
+                    <div class="flex gap-8 animate-fade mt-10">
+                        ${q.options.map((opt, i) => `
+                            <button onclick="checkAnswer(${i}, ${q.correct}, \`${q.tip}\`)" class="btn-ps">
+                                ${psIcons[i]}
+                                <span class="text-2xl font-bold orbitron uppercase tracking-widest">${opt}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            } 
+            else if (m.type === 'combo') {
+                comboWords = [];
+                instruct = "HACKING PROTOCOL: Click the words to build the correct sentence.";
+                const shuffled = shuffleArray([...q.words]);
+                ui = `
+                    <div class="w-full max-w-4xl animate-fade mb-20">
+                        <div id="drop-zone" class="min-h-[100px] border-2 border-dashed border-blue-500/50 bg-blue-900/10 p-6 flex flex-wrap gap-4 mb-16 items-center justify-center">
+                            <span class="text-gray-500 orbitron text-sm">Sequence Link...</span>
+                        </div>
+                        <div class="flex flex-wrap gap-8 justify-center mb-16 p-10 border border-white/5 rounded-2xl bg-black/40 min-h-[200px] items-center">
+                            ${shuffled.map(w => `
+                                <button style="${getRandomTransform()}" onclick="addToCombo(this, \`${w}\`)" class="syntax-word text-3xl font-bold">${w}</button>
+                            `).join('')}
+                        </div>
+                        <div class="flex gap-6 justify-center">
+                            <button onclick="checkCombo(\`${q.target}\`, \`${q.tip}\`)" class="btn-game px-12 py-4 bg-blue-600 border-blue-400 text-2xl">EXECUTE</button>
+                            <button onclick="renderGamePlay()" class="orbitron text-gray-400 hover:text-white px-6">Reset Sequence</button>
+                        </div>
+                    </div>
+                `;
+            }
+            else if (m.type === 'glitch') {
+                instruct = "GLITCH DETECTED: Find and click the grammar error!";
+                ui = `
+                    <div class="flex flex-wrap gap-8 justify-center max-w-4xl animate-fade mt-10">
+                        ${q.sentence.map((w, i) => `
+                            <span onclick="checkGlitch(${i}, ${q.bugIndex}, \`${q.explanation}\`)" class="text-6xl md:text-7xl font-black cursor-pointer hover:text-venom-purple transition-all glitch-hover drop-shadow-md">${w}</span>
+                        `).join('')}
+                    </div>
+                `;
+                document.getElementById('screen-game').classList.add('glitch-active');
+                setTimeout(() => document.getElementById('screen-game').classList.remove('glitch-active'), 300);
+            }
+            else if (m.type === 'comms') {
+                instruct = `INCOMING TRANSMISSION:\nRead the context and speak your answer out loud!`;
+                
+                let startersList = q.starters.map(s => `
+                    <div class="bg-green-900/30 border border-green-500/50 rounded-lg p-3 text-center hover:bg-green-800/40 transition-colors">
+                        <span class="text-xl font-bold text-white italic">"${s} ..."</span>
+                    </div>
+                `).join('');
+
+                ui = `
+                    <div class="text-center animate-fade w-full max-w-2xl">
+                        <div class="hud-panel p-8 mb-8 border-green-500">
+                            <p class="text-xl text-green-400 orbitron mb-4"><i class="fa-solid fa-volume-high mr-2"></i> ALLY SAYS:</p>
+                            <p class="text-2xl font-bold text-gray-100 mb-8 italic border-b border-white/10 pb-6">"${q.context}"</p>
+                            
+                            <p class="text-sm text-gray-400 orbitron mb-4">REPLY FREELY USING ONE OF THESE:</p>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                ${startersList}
+                            </div>
+                        </div>
+                        <button onclick="commsReplySent()" class="btn-game px-12 py-5 text-xl bg-green-600 border-green-400 w-full flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-microphone"></i> TRANSMIT REPLY
+                        </button>
+                    </div>
+                `;
+            }
+            else if (m.type === 'boss') {
+                instruct = `BOSS FIGHT: Speak freely to attack Venom!`;
+                
+                let startersList = q.starters.map(s => `
+                    <span class="bg-red-900/40 border border-red-500/50 px-4 py-2 text-xl font-bold text-white italic rounded hover:bg-red-800/60 transition-colors">"${s} ..."</span>
+                `).join('');
+
+                ui = `
+                    <div class="text-center animate-fade w-full max-w-3xl">
+                        <!-- Venom HP Bar -->
+                        <div class="w-full bg-black border-4 border-gray-800 h-8 mb-6 relative overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center z-10 orbitron text-xs font-bold tracking-widest text-white drop-shadow-md">VENOM HP: ${venomHp}%</div>
+                            <div class="bg-venom-purple h-full transition-all duration-500 ease-out" style="width: ${venomHp}%; box-shadow: 0 0 15px var(--venom-purple);"></div>
+                        </div>
+
+                        <div class="hud-panel p-10 border-venom-purple mb-8 relative overflow-hidden bg-black/90">
+                            <div class="absolute inset-0 bg-purple-900/20 animate-pulse"></div>
+                            
+                            <h3 class="orbitron text-venom-purple text-xl mb-4 tracking-widest flex items-center justify-center gap-3">
+                                <i class="fa-solid fa-skull"></i> VENOM TAUNTS: <i class="fa-solid fa-skull"></i>
+                            </h3>
+                            
+                            <p class="text-3xl font-bold mb-8 text-red-500 drop-shadow-[0_0_10px_red]">"${q.prompt}"</p>
+                            
+                            <div class="bg-blue-900/30 p-6 border-2 border-blue-500 clip-path-slant relative z-10 shadow-[0_0_20px_rgba(67,97,238,0.2)]">
+                                <p class="text-sm text-blue-300 orbitron mb-4 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-crosshairs animate-spin-slow"></i> SPEAK FREELY TO ATTACK USING:
+                                </p>
+                                <div class="flex gap-4 justify-center flex-wrap">
+                                    ${startersList}
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="bossHit()" class="btn-game btn-danger px-12 py-6 text-2xl w-full flex items-center justify-center gap-4">
+                            <i class="fa-solid fa-microphone-lines text-3xl"></i> EXECUTE VOICE ATTACK
+                        </button>
+                    </div>
+                `;
+            }
+
+            arena.innerHTML = ui;
+            typeDialogue(instruct, m.speaker, m.color, m.icon);
+        }
+
+        // --- INTERACTION LOGIC ---
+        function triggerFeedback(isHit, msg, isBoss = false) {
+            const fb = document.getElementById('screen-feedback');
+            const res = document.getElementById('feedback-result');
+            const tip = document.getElementById('feedback-tip');
+            
+            fb.classList.remove('hidden');
+            tip.innerText = msg;
+
+            if(isHit) {
+                res.innerText = isBoss ? "BOSS DAMAGED!" : "CRITICAL HIT!";
+                res.className = `orbitron text-6xl md:text-8xl font-black mb-4 tracking-widest uppercase ${isBoss ? 'text-venom-purple drop-shadow-[0_0_20px_purple]' : 'text-blue-500 drop-shadow-[0_0_20px_blue]'}`;
+                tip.className = "text-2xl mb-12 font-bold max-w-2xl mx-auto px-4 text-white";
+                xp += 150;
+            } else {
+                res.innerText = "DAMAGE TAKEN!";
+                res.className = "orbitron text-6xl md:text-8xl font-black mb-4 tracking-widest uppercase text-red-600 drop-shadow-[0_0_20px_red]";
+                tip.className = "text-xl mb-12 max-w-2xl mx-auto px-4 text-red-300 font-bold border border-red-900 bg-red-950/50 p-4 rounded";
+                hp -= 20;
+                shakeScreen();
+            }
+            updateHUD();
+        }
+
+        function checkAnswer(selected, correct, tip) {
+            triggerFeedback(selected === correct, tip);
+        }
+
+        function addToCombo(btn, word) {
+            if (comboWords.length === 0) document.getElementById('drop-zone').innerHTML = '';
+            comboWords.push(word);
+            const span = document.createElement('span');
+            span.className = 'bg-blue-600 text-white px-5 py-3 text-2xl font-bold clip-path-slant mr-3 mb-3 animate-fade inline-block shadow-[0_0_15px_blue]';
+            span.innerText = word;
+            document.getElementById('drop-zone').appendChild(span);
+            btn.style.visibility = 'hidden';
+        }
+
+        function checkCombo(target, tip) {
+            const result = comboWords.join(' ');
+            triggerFeedback(result === target, tip);
+        }
+
+        function checkGlitch(selected, correct, tip) {
+            triggerFeedback(selected === correct, tip);
+        }
+
+        function commsReplySent() {
+            triggerFeedback(true, "Reply sent successfully! Great speaking practice.");
+        }
+
+        function bossHit() {
+            venomHp -= 20;
+            let msg = "Attack Successful! Venom took 20% damage.";
+            if (venomHp <= 0) {
+                msg = "VENOM DEFEATED! The city is safe.";
+            }
+            triggerFeedback(true, msg, true);
+        }
+
+        // --- LEVEL PROGRESSION ---
+        function nextStep() {
+            document.getElementById('screen-feedback').classList.add('hidden');
+            currentStep++;
+            const m = gameData[currentMission];
+            
+            if (currentStep >= m.questions.length || (m.type === 'boss' && venomHp <= 0)) {
+                // Mission Cleared
+                document.getElementById('screen-game').classList.add('hidden');
+                document.getElementById('btn-abort').classList.add('hidden');
+                document.getElementById('screen-cleared').classList.remove('hidden');
+                document.getElementById('cleared-xp').innerText = (xp);
+                
+                let rank = 'C';
+                if(hp >= 80) rank = 'S';
+                else if(hp >= 60) rank = 'A';
+                else if(hp >= 40) rank = 'B';
+                
+                document.getElementById('cleared-rank').innerText = rank;
+                
+                const rankEl = document.getElementById('cleared-rank');
+                if(rank === 'S') rankEl.className = "text-6xl font-black text-yellow-400 orbitron drop-shadow-[0_0_15px_yellow]";
+                else if(rank === 'A') rankEl.className = "text-6xl font-black text-blue-400 orbitron drop-shadow-[0_0_15px_blue]";
+                else rankEl.className = "text-6xl font-black text-white orbitron";
+
+            } else {
+                renderGamePlay();
+            }
+        }
+
+        // Init Setup
+        updateHUD();
+    </script>
+</body>
+</html>
